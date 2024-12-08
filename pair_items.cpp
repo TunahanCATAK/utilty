@@ -18,10 +18,10 @@ int main()
     {
         std::cout << first << " " << second << std::endl;
     }
-
-//    auto x = tc::views::pair_items_view(numbers) | std::views::transform([](const auto& [first, second]) {
-//        return first + second;
-//    });
+    
+    auto x = std::views::transform(tc::views::pair_items_view(numbers), [](const auto& p) {
+        return p.first + p.second;
+    });
 
 
     return 0;

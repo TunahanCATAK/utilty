@@ -14,24 +14,37 @@ concept SizedContainer = requires(T t) {
 
 template <SizedContainer T>
 class pair_items_view {
-    T& container;
+    T* container;
 
     struct iterator {
-        const T& container;
+        const T* container;
         std::size_t current;
+        using difference_type = std::ptrdiff_t;
+        using value_type = std::pair<typename T::value_type, typename T::value_type>;
 
-        iterator(const T& container, std::size_t start) : container(container), current(start) {}
+        iterator() = default;
+        iterator(const T* container, std::size_t start) : container(container), current(start) {}
+        iterator(const iterator&) = default;
+        iterator& operator=(const iterator&) = default;
 
         std::pair<typename T::value_type, typename T::value_type> operator*() const {
-            auto [firstInd, secondInd] = indexes(current, container.size());
-            return {container[firstInd], container[secondInd]};
+            auto [firstInd, secondInd] = indexes(current, container->size());
+            return {(*container)[firstInd], (*container)[secondInd]};
         }
 
         iterator& operator++() {
             ++current;
             return *this;
         }
+        iterator operator++(int) {
+            iterator copy = *this;
+            ++current;
+            return copy;
+        }
 
+        bool operator==(const iterator& other) const {
+            return current == other.current;
+        }
         bool operator!=(const iterator& other) const {
             return current != other.current;
         }
@@ -54,13 +67,13 @@ class pair_items_view {
 
 
 public:
-    pair_items_view(T& container) : container(container) {}
+    pair_items_view(T& container) : container(std::addressof(container)) {}
 
     iterator begin() { return iterator(container, 0); }
     iterator end() { return iterator(container, size()); }
 
     std::size_t size() const {
-        return container.size() * (container.size() - 1) / 2;
+        return container->size() * (container->size() - 1) / 2;
     }
 };
 }
