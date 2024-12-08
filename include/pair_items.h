@@ -10,21 +10,25 @@ namespace tc::views {
 template <typename T>
 concept SizedContainer = requires(T t) {
     { t.size() } -> std::convertible_to<std::size_t>;
+    { t.begin() }; // Ensure it is iterable
+    { t.end() };
 };
 
 template <SizedContainer T>
-class pair_items_view {
-    T& container;
+class pair_items_view : public std::ranges::view_interface<pair_items_view<T>> {
+    T* container;
 
     struct iterator {
-        const T& container;
+        const T* container;
         std::size_t current;
 
-        iterator(const T& container, std::size_t start) : container(container), current(start) {}
+        using value_type = std::pair<typename T::value_type, typename T::value_type>;
 
-        std::pair<typename T::value_type, typename T::value_type> operator*() const {
-            auto [firstInd, secondInd] = indexes(current, container.size());
-            return {container[firstInd], container[secondInd]};
+        iterator(const T* container, std::size_t start) : container(container), current(start) {}
+
+        value_type operator*() const {
+            auto [firstInd, secondInd] = indexes(current, container->size());
+            return {(*container)[firstInd], (*container)[secondInd]};
         }
 
         iterator& operator++() {
@@ -32,8 +36,18 @@ class pair_items_view {
             return *this;
         }
 
+        iterator operator++(int) {
+            iterator temp = *this;
+            ++(*this);
+            return temp;
+        }
+
+        bool operator==(const iterator& other) const {
+            return current == other.current;
+        }
+
         bool operator!=(const iterator& other) const {
-            return current != other.current;
+            return !(*this == other);
         }
 
     private:
@@ -54,13 +68,13 @@ class pair_items_view {
 
 
 public:
-    pair_items_view(T& container) : container(container) {}
+    pair_items_view(T& container) : container(&container) {}
 
     iterator begin() { return iterator(container, 0); }
     iterator end() { return iterator(container, size()); }
 
     std::size_t size() const {
-        return container.size() * (container.size() - 1) / 2;
+        return container->size() * (container->size() - 1) / 2;
     }
 };
 }
