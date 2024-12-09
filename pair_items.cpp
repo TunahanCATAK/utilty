@@ -9,19 +9,46 @@
 
 #include "include/pair_items.h"
 
+
 int main()
 {
     std::cout << "Pair Items View Tests" << std::endl;
 
-    std::vector<int> numbers = {1, 2, 3, 4, 5};
-    for (const auto& [first, second] : tc::views::pair_items_view(numbers))
+
+      const std::vector<int> numbers = {1, 2, 3, 4, 5};
+//    for (const auto& [first, second] : tc::views::pair_items_view(numbers))
+//    {
+//        std::cout << first << " " << second << std::endl;
+//    }
+//
+//    auto x = std::views::transform(tc::views::pair_items_view(numbers), [](const auto& p) {
+//        return p.first + p.second;
+//    });
+//
+//    auto y = tc::views::pair_items_view(numbers) | std::views::transform([](const auto& p) {
+//        return p.first + p.second;
+//    });
+
+
+    auto foo = views::pair_items(numbers);
+    for (const auto& [first, second] : foo)
     {
         std::cout << first << " " << second << std::endl;
     }
-    
-    auto x = std::views::transform(tc::views::pair_items_view(numbers), [](const auto& p) {
+
+    auto x = std::views::transform(views::pair_items(numbers), [](const auto& p) {
         return p.first + p.second;
     });
+
+    std::cout << "Transformed" << std::endl;
+    for (const auto& item : x)
+    {
+        std::cout << item << std::endl;
+    }
+
+//    auto y = tc::views::pair_views(numbers) | std::views::transform([](const auto& p) {
+//        return p.first + p.second;
+//    });
 
 
     return 0;
