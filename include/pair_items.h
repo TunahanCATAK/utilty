@@ -6,76 +6,122 @@
 
 namespace tc::views {
 
-// Define a concept for a container with .size()
-template <typename T>
-concept SizedContainer = requires(T t) {
-    { t.size() } -> std::convertible_to<std::size_t>;
-};
+    template <std::ranges::range R>
+    class pair_views : public std::ranges::view_interface<pair_views<R>> {
+        R m_base;
 
-template <SizedContainer T>
-class pair_items_view {
-    T* container;
+        class cursor {
+            std::size_t position_ = 0;
+            std::size_t size_ = 0;
+            std::ranges::iterator_t<R> current_{};
 
-    struct iterator {
-        const T* container;
-        std::size_t current;
-        using difference_type = std::ptrdiff_t;
-        using value_type = std::pair<typename T::value_type, typename T::value_type>;
+        public:
+            using difference_type = std::ptrdiff_t;
+            using value_type = std::pair<std::ranges::range_value_t<R>, std::ranges::range_value_t<R>>;
 
-        iterator() = default;
-        iterator(const T* container, std::size_t start) : container(container), current(start) {}
-        iterator(const iterator&) = default;
-        iterator& operator=(const iterator&) = default;
+            cursor() = default;
+            cursor(const std::ranges::iterator_t<R> current, std::size_t start, std::size_t size) : current_{current}, position_(start), size_{size} {}
 
-        std::pair<typename T::value_type, typename T::value_type> operator*() const {
-            auto [firstInd, secondInd] = indexes(current, container->size());
-            return {(*container)[firstInd], (*container)[secondInd]};
-        }
+            cursor(const cursor&) = default;
+            cursor &operator=(const cursor&) = default;
 
-        iterator& operator++() {
-            ++current;
-            return *this;
-        }
-        iterator operator++(int) {
-            iterator copy = *this;
-            ++current;
-            return copy;
-        }
-
-        bool operator==(const iterator& other) const {
-            return current == other.current;
-        }
-        bool operator!=(const iterator& other) const {
-            return current != other.current;
-        }
-
-    private:
-        static std::pair<size_t, size_t> indexes(size_t index, size_t size) {
-            size_t row = 0;
-            size_t cumulative_count = 0;
-
-            while (index >= cumulative_count + (size - row - 1)) {
-                cumulative_count += (size - row - 1);
-                row++;
+            value_type operator*() const {
+                //std::cout << "operator*" << std::endl;
+                auto [firstInd, secondInd] = indexes(position_, size_);
+                return {current_[firstInd], current_[secondInd]};
             }
 
-            size_t col = index - cumulative_count + row + 1;
+            value_type operator*() {
+                //std::cout << "operator*" << std::endl;
+                auto [firstInd, secondInd] = indexes(position_, size_);
+                return {current_[firstInd], current_[secondInd]};
+            }
 
-            return {row, col};
+            cursor &operator++() {
+                //++current_;
+                ++position_;
+                return *this;
+            }
+
+            cursor operator++(int) {
+                cursor copy = *this;
+                //++current_;
+                ++position_;
+                return copy;
+            }
+
+            bool operator==(const cursor &other) const {
+                return position_ == other.position_;
+            }
+
+            bool operator!=(const cursor &other) const {
+                return position_ != other.position_;
+            }
+
+            friend class cursor;
+
+        private:
+            static std::pair<size_t, size_t> indexes(size_t index, size_t size) {
+                size_t row = 0;
+                size_t cumulative_count = 0;
+
+                while (index >= cumulative_count + (size - row - 1)) {
+                    cumulative_count += (size - row - 1);
+                    row++;
+                }
+
+                size_t col = index - cumulative_count + row + 1;
+
+                return {row, col};
+            }
+
+
+        };
+
+
+    public:
+        pair_views() = default;
+        constexpr pair_views(R base) : m_base(base) {
+            //std::cout << "pair_views" << std::endl;
         }
+
+        constexpr R base() const& requires std::copy_constructible<R> {
+            return m_base;
+        }
+        constexpr R base()&& { return std::move(m_base); }
+
+
+        constexpr auto begin() { return cursor(std::ranges::begin(m_base), 0, m_base.size()); }
+        constexpr auto begin() const { return cursor(std::ranges::begin(m_base), 0, m_base.size()); }
+
+        constexpr auto end() { return cursor(std::ranges::begin(m_base), size(), m_base.size()); }
+        constexpr auto end() const { return cursor(std::ranges::begin(m_base), size(), m_base.size()); }
+
+    private:
+        std::size_t size() const {
+            return m_base.size() * (m_base.size() - 1) / 2;
+        }
+
     };
 
+    template <class R>
+    pair_views(R&&)->pair_views<std::views::all_t<R>>;
 
-public:
-    pair_items_view(T& container) : container(std::addressof(container)) {}
-
-    iterator begin() { return iterator(container, 0); }
-    iterator end() { return iterator(container, size()); }
-
-    std::size_t size() const {
-        return container->size() * (container->size() - 1) / 2;
+    namespace detail {
+        class pair_items_fn {
+        public:
+            template <std::ranges::viewable_range R>
+            constexpr auto operator()(R&& r) const
+            requires std::ranges::input_range<R> {
+                //std::cout << "pair_items_fn" << std::endl;
+                return tc::views::pair_views{std::forward<R>(r)};
+            }
+        };
     }
-};
 }
 
-#endif TC_PAIR_ITEMS_H
+namespace views {
+    inline tc::views::detail::pair_items_fn pair_items{};
+}
+
+#endif
