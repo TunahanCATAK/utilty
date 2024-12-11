@@ -3,9 +3,20 @@ project(tc)
 
 set(CMAKE_CXX_STANDARD 23)
 
-include_directories (include)
+include(FetchContent)
+include(CTest)
 
+include_directories(include)
 
-# add_library(tc library.cpp)
-add_executable (test_lazyReadFile library.cpp)
-add_executable (test_pairItems pair_items.cpp)
+Include(FetchContent)
+
+FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG        v3.4.0 # or a later release
+)
+
+FetchContent_MakeAvailable(Catch2)
+
+add_executable(tests tests/pair_items_test.cpp)
+target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)

@@ -3,6 +3,7 @@
 
 #include <iterator>
 #include <concepts>
+#include <ranges>
 
 namespace tc::views {
 

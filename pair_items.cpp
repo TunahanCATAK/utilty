@@ -14,21 +14,7 @@ int main()
 {
     std::cout << "Pair Items View Tests" << std::endl;
 
-
-      const std::vector<int> numbers = {1, 2, 3, 4, 5};
-//    for (const auto& [first, second] : tc::views::pair_items_view(numbers))
-//    {
-//        std::cout << first << " " << second << std::endl;
-//    }
-//
-//    auto x = std::views::transform(tc::views::pair_items_view(numbers), [](const auto& p) {
-//        return p.first + p.second;
-//    });
-//
-//    auto y = tc::views::pair_items_view(numbers) | std::views::transform([](const auto& p) {
-//        return p.first + p.second;
-//    });
-
+    const std::vector<int> numbers = {1, 2, 3, 4, 5};
 
     auto foo = views::pair_items(numbers);
     for (const auto& [first, second] : foo)
@@ -46,9 +32,9 @@ int main()
         std::cout << item << std::endl;
     }
 
-//    auto y = tc::views::pair_views(numbers) | std::views::transform([](const auto& p) {
-//        return p.first + p.second;
-//    });
+    auto y = tc::views::pair_views(numbers) | std::views::transform([](const auto& p) {
+        return p.first + p.second;
+    });
 
 
     return 0;
