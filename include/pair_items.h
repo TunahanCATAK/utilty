@@ -85,10 +85,10 @@ namespace tc::views {
             //std::cout << "pair_views" << std::endl;
         }
 
-        constexpr R base() const& requires std::copy_constructible<R> {
-            return m_base;
-        }
-        constexpr R base()&& { return std::move(m_base); }
+//        constexpr R base() const& requires std::copy_constructible<R> {
+//            return m_base;
+//        }
+//        constexpr R base()&& { return std::move(m_base); }
 
 
         constexpr auto begin() { return cursor(std::ranges::begin(m_base), 0, m_base.size()); }
